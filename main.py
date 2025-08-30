@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
-
+import sys
+from Repository import Repository
 
 # parser= argparse.ArgumentParser(
 #     description="A Git for wonderland joy"
@@ -42,48 +43,80 @@ from pathlib import Path
 
 # git state maintenance
 
-class Repository:
-     def __init__(self, path="."):
-          self.path =Path(path).resolve()
-          self.get_dir = self.path / ".pygit"
+import argparse
+import sys
 
-          self.objects_dir = self.get_dir / "objects"
-          self.refs_dir = self.get_dir / "refs"
-          self.head_file = self.get_dir / "HEAD"
 
-          self.index_file = self.get_dir/"index"
 
-     def init(self)->bool:
-          # create the file with the current initialization
-          self.get_dir.mkdir() 
-          self.objects_dir.mkdir()
-          self.refs_dir.mkdir()     
-
-def main():
+def create_parser():
+    """Create the main argument parser."""
     parser = argparse.ArgumentParser(
         description="Python - A simple git CLI"
     )
-    subparsers=parser.add_subparsers(
-    dest="command",
-    help="Available Commands"
+    return parser
+
+
+def add_subparsers(parser):
+    """Add subparsers and return them."""
+    subparsers = parser.add_subparsers(
+        dest="command",
+        help="Available Commands"
     )
 
-    #init command
+    # init command
     init_parser = subparsers.add_parser(
         "init",
-        help="Intialize a new Git Repository"
+        help="Initialize a new Git Repository"
     )
 
+    
+
+
+    # add command
+    add_parser =subparsers.add_parser(
+        "add",
+        help="Add files and directories to the staging area"
+    )
+    add_parser.add_argument(
+        "paths",
+        nargs="+",
+        help="Files and directories to add"
+    )
+
+    return parser 
+
+def handle_commands(args):
+    """Handle commands after parsing."""
+    repo = Repository()
+    try:
+        if args.command == "init":
+            
+            if not repo.init():
+                print("Repository is already existing.")
+        elif args.command == "add":
+            if not repo.get_dir.exists():
+                print("Not a git repository. Please initialize first.")
+                return 
+            for path in args.paths:
+                repo.add(path)       
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+def main():
+    parser = create_parser()
+    parser = add_subparsers(parser)
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         return
-    
-    try:
-        if args.command == "init":
-             pass
 
-    except Exception as e:
-          print(f"Error:{e}")
+    handle_commands(args)
+
+
+if __name__ == "__main__":
+    main()
+
 main()
