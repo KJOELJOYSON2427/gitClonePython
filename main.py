@@ -83,6 +83,24 @@ def add_subparsers(parser):
         help="Files and directories to add"
     )
 
+    #commit parser
+    commit_parser=subparsers.add_parser(
+        "commit", help="Commit changes to the repository"
+    )
+
+    commit_parser.add_argument(
+        "-m",
+        "--message",
+        help="Commit message",
+        required=True
+    )
+    commit_parser.add_argument(
+        
+        "--author",
+        help="Author of the commit",
+        
+    )
+
     return parser 
 
 def handle_commands(args):
@@ -98,11 +116,17 @@ def handle_commands(args):
                 print("Not a git repository. Please initialize first.")
                 return 
             for path in args.paths:
-                repo.add(path)       
+                repo.add(path)   
+        elif args.command == "commit":
+            if not repo.get_dir.exists(): 
+                print("Not a git repository. Please initialize first.")
+                return   
+            author=args.author or "PyGit User at <email@example.com"
+            repo.commit(args.message, author)        
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
-
+#
 
 def main():
     parser = create_parser()

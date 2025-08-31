@@ -65,12 +65,35 @@ class Repository:
           index[path]=blob_hash
 
           self.save_index(index)
+          # Safe point to call garbage collection
+          self.garbage_collect()
           print(f"Added file {path} to staging area.")
 
 
 
-     def add_directory(self,path:str)->None:
-          pass
+     def add_directory(self, path: str, added_count=0) -> int:
+           print(f"Adding directory: {path}")
+           full_path = self.path / path
+           if not full_path.exists():
+              raise FileNotFoundError(f"Directory {full_path} does not exist.")
+           if not full_path.is_dir():
+              raise NotADirectoryError(f"Path {full_path} is not a directory.")
+
+           for item in full_path.iterdir():
+               rel_path = item.relative_to(self.path)
+           # Skip git internals
+               if rel_path.parts[0] in [".pygit", ".git", "__pycache__"] or item.is_symlink():
+                  continue
+               if item.is_file():
+                   self.add_file(str(item.relative_to(self.path)))
+                   added_count += 1
+               elif item.is_dir():
+                   added_count = self.add_directory(str(item.relative_to(self.path)), added_count)
+
+           if added_count > 0:
+               print(f"Added {added_count} files from directory: {full_path}")
+           else:
+               print(f"No files added from directory: {full_path}")
 
      def store_object(self, obj:GitObject)->str:
           object_hash=obj.hash()
@@ -96,3 +119,22 @@ class Repository:
 
      def save_index(self, index:Dict[str,str])->None:
           self.index_file.write_text(json.dumps(index,indent=2))
+
+
+     def garbage_collect(self):
+          index = self.load_index()
+          used_hashes=set(index.values())
+
+
+          for folder in self.objects_dir.iterdir():
+               if folder.is_dir():
+                    for obj_file in folder.iterdir():
+                         full_hash = folder.name + obj_file.name
+                         if full_hash not in used_hashes:
+                              obj_file.unlink()
+                              print(f"Removed unreferenced object {full_hash}")
+                         #Remove folder if empty
+                         if not any(folder.iterdir()):
+                              folder.rmdir()     
+     def commit(self, message:str, author:str="Pygit user at <email@email.com>")->None:
+          pass
