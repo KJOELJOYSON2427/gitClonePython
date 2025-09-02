@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict
 from GitObject import GitObject
 from Blob import Blob  
+from Tree import Tree  
 class Repository:
      def __init__(self, path="."):
           self.path =Path(path).resolve()
@@ -135,6 +136,75 @@ class Repository:
                               print(f"Removed unreferenced object {full_hash}")
                          #Remove folder if empty
                          if not any(folder.iterdir()):
-                              folder.rmdir()     
-     def commit(self, message:str, author:str="Pygit user at <email@email.com>")->None:
-          pass
+                              folder.rmdir() 
+
+
+     def commit(
+               self,
+               message:str,
+               author:str="Pygit user at <email@email.com>"
+                )->None:
+          #create a tree object from the index (staging area and stored it in objects)
+          tree_hash= self.create_tree_from_index() #root hash
+          
+
+
+
+
+
+
+     def create_recursive_tree_object(self,entries:Dict)->str:
+          tree=Tree()
+
+          for name,blob_hashOrFolderNested in entries.items():
+               if isinstance(blob_hashOrFolderNested, str):
+                    tree.add_entry("100644",name, blob_hashOrFolderNested)
+
+               if isinstance(blob_hashOrFolderNested,dict):
+                    subtree_hash=self.create_recursive_tree_object(blob_hashOrFolderNested)
+                    tree.add_entry("40000", name, subtree_hash)
+
+          return self.store_object(tree)                
+     
+     #it create s a dict then a tree object to the createrecursive tree ->root hash
+     def create_tree_from_index(self)->str:
+          index =self.load_index()
+
+          if not index:
+               tree=Tree()
+               return self.store_object(tree)
+          
+          dirs={}
+          files={}
+
+          for file_path, blob_hash in index.items():
+               parts=file_path.split("//")
+
+
+               if len(parts)==1:
+                    #file in root
+                    files[parts[0]]=blob_hash
+               else: 
+                    dirs_name = parts[0]
+                    if dirs_name not in dirs:
+                         dirs[dirs_name]={}
+
+                    current=dirs[dirs_name]
+                    for part in parts[1:-1]:
+                         if part not in current:
+                          # dictionary value reference
+                            current[part]={}         
+                         current=current[part]
+
+                    current[parts[-1]]=blob_hash  
+
+          root_entries={**files}  #root files
+          for dict_name,dict_contents in dirs.items():
+               root_entries[dict_name]=dict_contents
+
+
+          return self.create_recursive_tree_object(root_entries)             
+
+
+
+  
