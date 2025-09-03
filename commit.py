@@ -65,7 +65,7 @@ class Commit(GitObject):
                 timestamp=int(author_parts[1])
             elif line.startswith("committer: "):
                 committer_parts=line[10:].rsplit(" ", 2) 
-                committer = author_parts[0]
+                committer = committer_parts[0]
 
             elif line =="":
                 message_start = i+1 # index+1 next list item

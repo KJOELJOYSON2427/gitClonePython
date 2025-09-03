@@ -54,6 +54,7 @@ class Repository:
 
      def add_file(self, path:str)-> None:
           full_path =self.path / path
+          print(full_path)
           if not full_path.exists() or not full_path.is_file():
                raise FileNotFoundError(f"File {full_path} does not exist.")
           
@@ -62,15 +63,18 @@ class Repository:
           # Create BLOB object from the content which is a class
           blob = Blob(content)
           # store the blob object in database (.pygit/objects)
+          print("came 6")
           blob_hash =self.store_object(blob)
           #Update index to include the file 
+          print("came 6")
           index=self.load_index()
 
           index[path]=blob_hash
 
           self.save_index(index)
+          print("came 6")
           # Safe point to call garbage collection
-          self.garbage_collect()
+          
           print(f"Added file {path} to staging area.")
 
 
@@ -78,19 +82,28 @@ class Repository:
      def add_directory(self, path: str, added_count=0) -> int:
            print(f"Adding directory: {path}")
            full_path = self.path / path
+           print(full_path)
            if not full_path.exists():
+              print("came 1")
               raise FileNotFoundError(f"Directory {full_path} does not exist.")
            if not full_path.is_dir():
+              print("came 2")
               raise NotADirectoryError(f"Path {full_path} is not a directory.")
 
            for item in full_path.iterdir():
+               print("came 3")
                rel_path = item.relative_to(self.path)
+               print(rel_path)
            # Skip git internals
                if rel_path.parts[0] in [".pygit", ".git", "__pycache__"] or item.is_symlink():
+                  print("came 4")
                   continue
                if item.is_file():
+                   print("came 5")
+                   print(item.relative_to(self.path))
                    self.add_file(str(item.relative_to(self.path)))
                    added_count += 1
+                   print(added_count)
                elif item.is_dir():
                    added_count = self.add_directory(str(item.relative_to(self.path)), added_count)
 
@@ -103,11 +116,13 @@ class Repository:
           object_hash=obj.hash()
           object_dir= self.objects_dir / object_hash[:2]
           object_file = object_dir /object_hash[2:]
-
+          print("came 7")
           if not object_dir.exists():
-               object_dir.mkdir(exist_ok=True)
+               print("came 8")
+               object_dir.mkdir(parents=True, exist_ok=True)
+               print("came 9")
           if not object_file.exists():
-               object_file.write_bytes(obj.serialize())
+               object_file.write_bytes(obj.serialize()) #here it is serialized
 
           return object_hash 
 
@@ -119,13 +134,15 @@ class Repository:
           except:
                return {}    
 
-     def load_object(self, object_hash: str) -> "Commit":
+     def load_object(self, object_hash: str) -> GitObject:
+          print("came 11")
           object_dir = self.objects_dir / object_hash[:2]
           object_file = object_dir / object_hash[2:]
           if not object_file.exists():
               raise FileNotFoundError(f"Object {object_hash} not found")
           data = object_file.read_bytes()
-          return Commit.from_content(data)
+          return GitObject.deserialize(data) # i dont think this will work
+           
      
      def save_index(self, index:Dict[str,str])->None:
           self.index_file.write_text(json.dumps(index,indent=2))
@@ -159,15 +176,22 @@ class Repository:
 
 
           current_branch=self.get_current_branch()
-
+          print("came10")
           parent_commit = self.get_branch_commit(current_branch=current_branch)
+
+          index = self.load_index()
+          if not index:
+               print("nothing to commit, working tree clean")
+               return None
+
           # ✅ check if tree is same as parent's tree
           if parent_commit is not None:
-                parent_obj = self.load_object(parent_commit)   # load commit object
-          if tree_hash == parent_obj.tree_hash:
-                print("nothing to commit, working tree clean")
-                return None
-          parent_hashes= [parent_commit] if parent_commit!= None else [] #ternary operator
+                parent_obj_git_commit = self.load_object(parent_commit)
+                parent_obj=Commit.from_content(parent_obj_git_commit.content)   # load commit object
+                if tree_hash == parent_obj.tree_hash:
+                    print("nothing to commit, working tree clean")
+                    return None
+          parent_hashes= [parent_commit] if parent_commit != None else [] #ternary operator
           
           
 
@@ -179,9 +203,9 @@ class Repository:
                parent_hashes=parent_hashes,   # parent comes from head
           )
           commit_hash = self.store_object(commit)
-          
-          self.save_index(tree_hash) # chechk here
-
+          #clean the index 
+          self.save_index({})
+          self.set_branch_commit(current_branch, commit_hash) # for the ref/heads/file commit creation
           print(f"Created the commit {commit_hash} in branch {current_branch}")
           return commit_hash
 
@@ -262,7 +286,17 @@ class Repository:
                root_entries[dict_name]=dict_contents
 
 
-          return self.create_recursive_tree_object(root_entries)             
+          return self.create_recursive_tree_object(root_entries)
+
+
+     def set_branch_commit(self , current_branch: str, commit_hash:str):
+          branch_file = self.heads_dir / current_branch
+
+          if not branch_file.exists():
+               branch_file.write_text(commit_hash)
+
+          branch_file.write_text(commit_hash + "\n")     
+
 
 
 

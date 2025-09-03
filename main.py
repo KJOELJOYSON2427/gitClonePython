@@ -100,9 +100,31 @@ def add_subparsers(parser):
         help="Author of the commit",
         
     )
-
+    commit_parser.add_argument(
+        
+        "--committer",
+        help="committer of the commit",
+        
+    )
+    #checkout command
+    checkout_parser = subparsers.add_parser(
+        "checkout",
+        help="Move/Create a new branch"
+    )
+    checkout_parser.add_argument(
+        "branch",
+        help="Branch to switch to"
+    )
+    checkout_parser.add_argument(
+        "-b",
+        "--create-branch",
+        action="store_true",
+        help="Create and Switch to a new branch",
+    )
     return parser 
 
+   
+   
 def handle_commands(args):
     """Handle commands after parsing."""
     repo = Repository()
@@ -122,7 +144,17 @@ def handle_commands(args):
                 print("Not a git repository. Please initialize first.")
                 return   
             author=args.author or "PyGit User at <email@example.com"
-            repo.commit(args.message, author)        
+            committer =args.committer or args.author
+            repo.commit(args.message, committer,author) 
+        elif args.command == "checkout":
+            if not repo.get_dir.exists():
+                print("Not a git repository. Please initialize first.")
+                return
+            repo.checkout(args.branch, args.create_branch)     
+        elif args.command == "gc":
+            repo.garbage_collect()
+            #
+           
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
@@ -143,4 +175,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-main()

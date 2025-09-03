@@ -2,10 +2,10 @@ from typing import List, Tuple
 from GitObject import GitObject
 class Tree(GitObject):
 
-    def __init__(self, entries: List[Tuple[str, str,str]]):
+    def __init__(self, entries: List[Tuple[str, str,str]]=None):
         self.entries=entries or []
         content = self._serialize_entries()
-        super.__init__("tree", content)
+        super().__init__("tree", content)
 
 
      # called through add_entry for bytes conversion of the 

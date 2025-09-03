@@ -25,12 +25,12 @@ class GitObject:
     def deserialize(cls,data:bytes)-> "GitObject":
         decompressed_data =zlib.decompress(data)
         find_index=decompressed_data.find(b"\0")
-        header =decompressed_data[:find_index]
+        header =decompressed_data[:find_index].decode()
         content=decompressed_data[find_index+1:]
 
         object_type, _=header.split(" ")
 
-        return cls(object_type.decode(), content)
+        return cls(object_type, content)
     
 
 
