@@ -4,7 +4,10 @@ from typing import Dict
 from GitObject import GitObject
 from Blob import Blob  
 from Tree import Tree  
+from commit import Commit
+
 class Repository:
+
      def __init__(self, path="."):
           self.path =Path(path).resolve()
           self.get_dir = self.path / ".pygit"
@@ -116,8 +119,14 @@ class Repository:
           except:
                return {}    
 
-
-
+     def load_object(self, object_hash: str) -> "Commit":
+          object_dir = self.objects_dir / object_hash[:2]
+          object_file = object_dir / object_hash[2:]
+          if not object_file.exists():
+              raise FileNotFoundError(f"Object {object_hash} not found")
+          data = object_file.read_bytes()
+          return Commit.from_content(data)
+     
      def save_index(self, index:Dict[str,str])->None:
           self.index_file.write_text(json.dumps(index,indent=2))
 
@@ -142,14 +151,62 @@ class Repository:
      def commit(
                self,
                message:str,
+               committer:str,
                author:str="Pygit user at <email@email.com>"
-                )->None:
+                )->None| str:
           #create a tree object from the index (staging area and stored it in objects)
           tree_hash= self.create_tree_from_index() #root hash
+
+
+          current_branch=self.get_current_branch()
+
+          parent_commit = self.get_branch_commit(current_branch=current_branch)
+          # ✅ check if tree is same as parent's tree
+          if parent_commit is not None:
+                parent_obj = self.load_object(parent_commit)   # load commit object
+          if tree_hash == parent_obj.tree_hash:
+                print("nothing to commit, working tree clean")
+                return None
+          parent_hashes= [parent_commit] if parent_commit!= None else [] #ternary operator
+          
           
 
+          commit= Commit(
+               tree_hash=tree_hash,
+               author_name=author,
+               committer=committer or author,
+               commit_message=message,
+               parent_hashes=parent_hashes,   # parent comes from head
+          )
+          commit_hash = self.store_object(commit)
+          
+          self.save_index(tree_hash) # chechk here
+
+          print(f"Created the commit {commit_hash} in branch {current_branch}")
+          return commit_hash
 
 
+
+
+
+     def get_branch_commit(self, current_branch: str)-> str | None:
+          branch_file = self.heads_dir / current_branch
+          if branch_file.exists():
+               return branch_file.read_text().strip()
+          
+          return None
+     
+
+     def get_current_branch(self)->str:
+          if not self.head_file.exists():
+               return "master"
+          
+          head_content = self.head_file.read_text().strip()
+          if head_content.startswith("ref: refs/heads/"):
+               return head_content[16:]
+          
+
+          return "HEAD" #detatched head due to checkout
 
 
 
@@ -166,6 +223,8 @@ class Repository:
 
           return self.store_object(tree)                
      
+
+
      #it create s a dict then a tree object to the createrecursive tree ->root hash
      def create_tree_from_index(self)->str:
           index =self.load_index()

@@ -9,7 +9,7 @@ class Commit(GitObject):
                  tree_hash:str,
                  commit_message:str, 
                  author_name:str, 
-                 content:str,
+                
                  committer:str,
                  parent_hashes: List[str],
                  timestamp:int = None,
@@ -22,6 +22,8 @@ class Commit(GitObject):
         self.timestamp=timestamp or int(time.time())
         self.committer=committer
         self.commit_message=commit_message
+
+        content = self._serialize_commit()
         super().__init__("commit", content)
               
 
@@ -33,7 +35,7 @@ class Commit(GitObject):
 
         # Author and committer (for realism, you can use same values)
         lines.append(f"author {self.author} {self.timestamp} +0000")
-        lines.append(f"committer {self.author} {self.timestamp} +0000")
+        lines.append(f"committer {self.author}")
 
         # Blank line before message
         lines.append("")
@@ -60,14 +62,18 @@ class Commit(GitObject):
             elif line.startswith("author: "):
                 author_parts=line[7:].rsplit(" ", 2) 
                 author = author_parts[0]
-                timestamp=author_parts[1] 
+                timestamp=int(author_parts[1])
             elif line.startswith("committer: "):
                 committer_parts=line[10:].rsplit(" ", 2) 
                 committer = author_parts[0]
 
             elif line =="":
-                message_start      
-
+                message_start = i+1 # index+1 next list item
+                break;    
+        
+        message = "\n".join(lines[message_start+1:])
+        commit = cls(tree_hash, message,author,committer, _parent_hashes,timestamp)
+        return commit
 
    
           
