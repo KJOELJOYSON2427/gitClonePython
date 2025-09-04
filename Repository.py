@@ -9,6 +9,7 @@ from commit import Commit
 class Repository:
 
      def __init__(self, path="."):
+          
           self.path =Path(path).resolve()
           self.get_dir = self.path / ".pygit"
 
@@ -176,6 +177,7 @@ class Repository:
 
 
           current_branch=self.get_current_branch()
+          print(current_branch)
           print("came10")
           parent_commit = self.get_branch_commit(current_branch=current_branch)
 
@@ -226,10 +228,11 @@ class Repository:
                return "master"
           
           head_content = self.head_file.read_text().strip()
-          if head_content.startswith("ref: refs/heads/"):
+          print(head_content)
+          print(head_content.startswith("refs: refs/heads/"))
+          if head_content.startswith("refs: refs/heads/"):    
                return head_content[16:]
           
-
           return "HEAD" #detatched head due to checkout
 
 

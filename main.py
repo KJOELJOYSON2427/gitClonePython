@@ -45,7 +45,7 @@ from Repository import Repository
 
 import argparse
 import sys
-
+from checkout import Checkout
 
 
 def create_parser():
@@ -128,6 +128,7 @@ def add_subparsers(parser):
 def handle_commands(args):
     """Handle commands after parsing."""
     repo = Repository()
+    checkout=Checkout(repo)
     try:
         if args.command == "init":
             
@@ -150,7 +151,7 @@ def handle_commands(args):
             if not repo.get_dir.exists():
                 print("Not a git repository. Please initialize first.")
                 return
-            repo.checkout(args.branch, args.create_branch)     
+            checkout.checkout(args.branch, args.create_branch)     
         elif args.command == "gc":
             repo.garbage_collect()
             #
