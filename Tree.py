@@ -35,7 +35,7 @@ class Tree(GitObject):
             
             if nullidx == -1:
                 break
-            mode_and_name = content[i:nullidx].decode()
+            mode_and_name = content[i:nullidx].decode("utf-8")
             mode,name=mode_and_name.split(" ",1)
             start = nullidx + 1
             end = start + hash_len
@@ -43,7 +43,7 @@ class Tree(GitObject):
             tree.entries.append((mode,name,object_hash))
 
             #increment the i pointer
-            i=i+end
+            i=end
 
         return tree    
 

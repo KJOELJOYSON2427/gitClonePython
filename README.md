@@ -1,2 +1,0 @@
-# gitClonePython
- Work Harder ,Smarter
