@@ -229,8 +229,8 @@ class Repository:
           
           head_content = self.head_file.read_text().strip()
           print(head_content)
-          print(head_content.startswith("refs: refs/heads/"))
-          if head_content.startswith("refs: refs/heads/"):    
+          print(head_content.startswith("refs: ref/heads/"))
+          if head_content.startswith("refs: ref/heads/"):    
                return head_content[16:]
           
           return "HEAD" #detatched head due to checkout
