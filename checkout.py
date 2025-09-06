@@ -1,19 +1,40 @@
 from Repository import Repository
-
+from  Tree import Tree
 class Checkout():
 
     def __init__(self, repo: Repository):
         self.repo = repo
     
 
-
-    def get_files_from_recursive(self, tree_hash:str):
+# [
+#   ("100644", "file1.txt", <blob_hash1>),
+#   ("100644", "file2.txt", <blob_hash2>),
+#   ("40000", "dirA", <tree_hash_dirA>)
+# ]
+    #get the name of the file
+    def get_files_from_recursive(self, tree_hash:str,prefix:str=""):
         files=set()
 
         try:
-          pass
+          tree_obj = self.repo.load_object(tree_hash)
+          tree=Tree.from_content(tree_obj.content)
+          
+          #List[Tuple(str,str,str)]
+          for mode,name, object_hash in tree.entries:
+              full_path= f"{prefix}{name}"
+              if mode.startswith("100"):
+                  files.add(name)
+              elif mode.startswith("400"):
+                  #directory so recurse it 
+                  nested_files=self.get_files_from_recursive(object_hash, prefix=full_path+"//")    
+                  files.update(nested_files)
+                  print(files, nested_files)
+
+        
         except Exception as e:
-          print(f"Warning: could not read tree {tree_hash}")      
+          print(f"Warning: could not read tree {tree_hash}: e") 
+
+        return files       
 
 
     def checkout(self, branch:str, create_branch: bool):

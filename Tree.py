@@ -1,7 +1,7 @@
 from typing import List, Tuple
 from GitObject import GitObject
 class Tree(GitObject):
-
+                               #<mode> <name>\0<hash> ->directory or bhb hassh
     def __init__(self, entries: List[Tuple[str, str,str]]=None):
         self.entries=entries or []
         content = self._serialize_entries()
@@ -23,5 +23,27 @@ class Tree(GitObject):
         # needed during hash time 
         self.entries.append((mode,name,blob_hashOrSubTreeHash))
         self.content=self._serialize_entries()
-        
+
+    
+    @classmethod
+    def from_content(cls, content: bytes)->"Tree":
+        tree =cls()
+        i=0 # index it
+
+        while i<len(content):
+            nullidx= content.find(b"\0",i)
+            
+            if nullidx == -1:
+                break
+            mode_and_name = content[i:nullidx].decode()
+            mode,name=mode_and_name.split(" ",1)
+            object_hash=content[nullidx+1: nullidx+21].hex()
+            tree.entries.append((mode,name,object_hash))
+
+            #increment the i pointer
+            i=i+21
+
+        return tree    
+
+
 
