@@ -121,6 +121,13 @@ def add_subparsers(parser):
         action="store_true",
         help="Create and Switch to a new branch",
     )
+
+     #branch command
+    branch_parser =subparsers.add_parser("branch", help="List or manage branches")
+    branch_parser.add_argument(
+        "-b", "--create-branch",
+        help=""
+    ) 
     return parser 
 
    

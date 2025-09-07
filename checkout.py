@@ -50,6 +50,8 @@ class Checkout:
                 file_path.mkdir(exist_ok=True)
                 self.restore_tree(obj_hash, file_path)
 
+
+
     def restore_working_directory(self, branch: str, files_to_clear: set[str]):
         """Clear old files and restore the tree from target branch."""
         target_commit_hash = self.repo.get_branch_commit(branch)
@@ -63,8 +65,8 @@ class Checkout:
                 if file_path.is_file():
                     file_path.unlink()
                 # optional: remove empty dirs
-                # elif file_path.is_dir() and not any(file_path.iterdir()):
-                #     file_path.rmdir()
+                elif file_path.is_dir() and not any(file_path.iterdir()):
+                    file_path.rmdir()
             except Exception:
                 pass
 
@@ -74,6 +76,9 @@ class Checkout:
 
         if target_commit.tree_hash:
             self.restore_tree(target_commit.tree_hash, self.repo.path)
+
+
+
 
     def checkout(self, branch: str, create_branch: bool):
         """Switch branches, optionally creating a new one."""
