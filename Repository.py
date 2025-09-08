@@ -136,12 +136,13 @@ class Repository:
                return {}    
 
      def load_object(self, object_hash: str) -> GitObject:
-          print("came 11")
+          
           object_dir = self.objects_dir / object_hash[:2]
           object_file = object_dir / object_hash[2:]
           if not object_file.exists():
               raise FileNotFoundError(f"Object {object_hash} not found")
           data = object_file.read_bytes()
+          
           return GitObject.deserialize(data) # i dont think this will work
            
      

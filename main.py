@@ -42,10 +42,11 @@ from Repository import Repository
 
 
 # git state maintenance
-
+from branch import Branch
 import argparse
 import sys
 from checkout import Checkout
+from log import Log
 
 
 def create_parser():
@@ -69,7 +70,10 @@ def add_subparsers(parser):
         help="Initialize a new Git Repository"
     )
 
-    
+    log_parser= subparsers.add_parser(
+        "log",
+        help="Show all the commits"
+    )
 
 
     # add command
@@ -121,13 +125,33 @@ def add_subparsers(parser):
         action="store_true",
         help="Create and Switch to a new branch",
     )
+    
 
      #branch command
     branch_parser =subparsers.add_parser("branch", help="List or manage branches")
     branch_parser.add_argument(
-        "-b", "--create-branch",
-        help=""
+         "name",
+        nargs="?",  # one or no value
+        help="Name a new branch"
     ) 
+    branch_parser.add_argument(
+        "-b", "--create-branch",
+        action="store_true",
+        help="Create a new branch"
+    ) 
+    branch_parser.add_argument(
+        "-d", "--delete-branch",
+        action="store_true",
+        help="Delete a new branch"
+    ) 
+    log_parser.add_argument(
+        "-n", 
+        "--max-count",
+        type=int,
+        default=10,
+        help="Limit commits shown"
+    ) 
+
     return parser 
 
    
@@ -158,7 +182,33 @@ def handle_commands(args):
             if not repo.get_dir.exists():
                 print("Not a git repository. Please initialize first.")
                 return
-            checkout.checkout(args.branch, args.create_branch)     
+            checkout.checkout(args.branch, args.create_branch)    
+
+        elif args.command == "branch":
+            if not repo.get_dir.exists():
+                print("Not a git repository. Please initialize first.")
+                return
+            branch=Branch(repo)
+            if args.create_branch:
+                  
+                  print(f"Creating branch {args.name}")
+                  branch.create(args.name)
+            elif args.delete_branch:
+                 print(f"Deleting branch {args.name}")
+                 branch.delete(args.name)
+            elif args.list_branch:
+                print("Listing all branches \n")
+                branch_mg= branch.list()
+                for mg in branch_mg:
+                    print(mg)
+                   
+
+            else:
+               print("No action provided. Use -b, -d, or -v.")
+
+        elif args.command =="log":
+            log=Log(repo)
+            log.log(args.max_count) #defult 10
         elif args.command == "gc":
             repo.garbage_collect()
             #

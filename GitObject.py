@@ -29,7 +29,7 @@ class GitObject:
         content=decompressed_data[find_index+1:]
 
         object_type, _=header.split(" ")
-
+        
         return cls(object_type, content)
     
 

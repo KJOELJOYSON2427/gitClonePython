@@ -25,7 +25,10 @@ class Commit(GitObject):
 
         content = self._serialize_commit()
         super().__init__("commit", content)
-              
+            
+    @property
+    def message(self) -> str:
+      return self.commit_message          
 
     def _serialize_commit(self):
         lines = [f"tree {self.tree_hash}"]
@@ -38,42 +41,37 @@ class Commit(GitObject):
         lines.append(f"committer {self.author}")
 
         # Blank line before message
-        lines.append("")
+        lines.append(" ")
         lines.append(self.commit_message)
 
         return "\n".join(lines).encode()
     
     @classmethod
-    def from_content(cls, content:bytes):
-        lines = content.decode()
-        lines=lines.split("\n")
+    def from_content(cls, content: bytes):
+        lines = content.decode().split("\n")
         tree_hash = None
-        author=None
-        _parent_hashes=[]
-        committer=None
-        message_start= 0
-        timestamp=0
+        author = None
+        parent_hashes = []
+        committer = None
+        timestamp = 0
+        message_start = 0
 
         for i, line in enumerate(lines):
             if line.startswith("tree "):
-                tree_hash=line[5:]
+               tree_hash = line[5:]
             elif line.startswith("parent "):
-                _parent_hashes.append(line[7:])
-            elif line.startswith("author: "):
-                author_parts=line[7:].rsplit(" ", 2) 
-                author = author_parts[0]
-                timestamp=int(author_parts[1])
-            elif line.startswith("committer: "):
-                committer_parts=line[10:].rsplit(" ", 2) 
-                committer = committer_parts[0]
+              parent_hashes.append(line[7:])
+            elif line.startswith("author "):  # no colon
+              author_parts = line[7:].rsplit(" ", 1)
+              author = author_parts[0]
+              timestamp = int(author_parts[1])
+            elif line.startswith("committer "):  # no colon
+              committer = line[10:]
+            elif line.strip() == " ":  # blank line separates headers from message
+              message_start = i + 1
+            break
 
-            elif line =="":
-                message_start = i+1 # index+1 next list item
-                break;    
-        
-        message = "\n".join(lines[message_start+1:])
-        commit = cls(tree_hash, message,author,committer, _parent_hashes,timestamp)
-        return commit
-
-   
-          
+        # Commit message starts right after the blank line
+        message = "\n".join(lines[message_start:]).strip()
+       
+        return cls(tree_hash, message, author, committer, parent_hashes, timestamp)
