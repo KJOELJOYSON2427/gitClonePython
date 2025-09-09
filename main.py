@@ -42,6 +42,7 @@ from Repository import Repository
 
 
 # git state maintenance
+from Status import Status
 from branch import Branch
 import argparse
 import sys
@@ -70,10 +71,7 @@ def add_subparsers(parser):
         help="Initialize a new Git Repository"
     )
 
-    log_parser= subparsers.add_parser(
-        "log",
-        help="Show all the commits"
-    )
+    
 
 
     # add command
@@ -91,6 +89,7 @@ def add_subparsers(parser):
     commit_parser=subparsers.add_parser(
         "commit", help="Commit changes to the repository"
     )
+
 
     commit_parser.add_argument(
         "-m",
@@ -144,6 +143,10 @@ def add_subparsers(parser):
         action="store_true",
         help="Delete a new branch"
     ) 
+    log_parser= subparsers.add_parser(
+        "log",
+        help="Show all the commits"
+    )
     log_parser.add_argument(
         "-n", 
         "--max-count",
@@ -151,6 +154,11 @@ def add_subparsers(parser):
         default=10,
         help="Limit commits shown"
     ) 
+   
+    status_parser = subparsers.add_parser(
+        "status",
+        help="Show the git status"
+    )
 
     return parser 
 
@@ -207,8 +215,17 @@ def handle_commands(args):
                print("No action provided. Use -b, -d, or -v.")
 
         elif args.command =="log":
+            if not repo.get_dir.exists():
+                print("Not a git repository. Please initialize first.")
+                return
             log=Log(repo)
             log.log(args.max_count) #defult 10
+        elif args.command == "status":
+            if not repo.get_dir.exists():
+                print("Not a git repository. Please initialize first.")
+                return
+            status =Status(repo) 
+            status.status()   
         elif args.command == "gc":
             repo.garbage_collect()
             #
