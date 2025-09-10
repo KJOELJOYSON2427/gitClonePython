@@ -14,7 +14,7 @@ class GitObject:
         #<type><size>/0<content>
         header=f"{self.type} {self.content.__len__()}\0".encode()
         full_content=header+self.content
-        return hashlib.sha256(full_content).hexdigest()    
+        return hashlib.sha1(full_content).hexdigest()    
     
 
     def serialize(self)-> bytes:

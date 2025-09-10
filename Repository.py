@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict
 from GitObject import GitObject
 from Blob import Blob  
+
 from Tree import Tree  
 from commit import Commit
 
@@ -142,7 +143,7 @@ class Repository:
           if not object_file.exists():
               raise FileNotFoundError(f"Object {object_hash} not found")
           data = object_file.read_bytes()
-          
+        
           return GitObject.deserialize(data) # i dont think this will work
            
      
@@ -175,7 +176,7 @@ class Repository:
                 )->None| str:
           #create a tree object from the index (staging area and stored it in objects)
           tree_hash= self.create_tree_from_index() #root hash
-
+          
 
           current_branch=self.get_current_branch()
           print(current_branch)
@@ -183,14 +184,17 @@ class Repository:
           parent_commit = self.get_branch_commit(current_branch=current_branch)
 
           index = self.load_index()
+          print(index)
           if not index:
                print("nothing to commit, working tree clean")
                return None
 
           # ✅ check if tree is same as parent's tree
           if parent_commit is not None:
+                
                 parent_obj_git_commit = self.load_object(parent_commit)
                 parent_obj=Commit.from_content(parent_obj_git_commit.content)   # load commit object
+                print(tree_hash,parent_obj.tree_hash )
                 if tree_hash == parent_obj.tree_hash:
                     print("nothing to commit, working tree clean")
                     return None
@@ -207,11 +211,32 @@ class Repository:
           )
           commit_hash = self.store_object(commit)
           #clean the index 
-          self.save_index({})
+          self.save_index({})#alternative
           self.set_branch_commit(current_branch, commit_hash) # for the ref/heads/file commit creation
           print(f"Created the commit {commit_hash} in branch {current_branch}")
           return commit_hash
+  
 
+
+
+     def build_index_from_tree(self, tree_hash: str) -> dict:
+        """
+        Given a tree hash, reconstruct the index (path → blob_hash).
+        """
+        index = {}
+        def walk_tree(tree_hash: str, prefix: str=""):
+           tree_obj = self.load_object(tree_hash)
+           tree = Tree.from_content(tree_obj.content)
+
+           for mode,name, obj_hash in tree.entries:
+               path = f"{prefix}//{name}" if prefix else name
+               if mode.startswith("400"):  # directory
+                   walk_tree(obj_hash, path)
+               elif mode.startswith("100"):  # blob (file)
+                  index[path] = obj_hash
+
+        walk_tree(tree_hash)
+        return index
 
 
 
@@ -255,6 +280,7 @@ class Repository:
 
      #it create s a dict then a tree object to the createrecursive tree ->root hash
      def create_tree_from_index(self)->str:
+
           index =self.load_index()
 
           if not index:

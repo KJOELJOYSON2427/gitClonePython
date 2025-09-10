@@ -29,7 +29,7 @@ class Tree(GitObject):
     def from_content(cls, content: bytes)->"Tree":
         tree =cls()
         i=0 # index it
-        hash_len = 32  # bytes for SHA-256 (20 for SHA-1)
+        hash_len = 20  # bytes for SHA-256 (20 for SHA-1)
         while i<len(content):
             nullidx= content.find(b"\0",i)
             

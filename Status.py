@@ -34,16 +34,20 @@ Clean: everything matches HEAD.
         Compare the previous and current index
         """
         last_index_files={}
+        print(commit_hash)
         if commit_hash:
             try:
                 commit_object=self.repo.load_object(commit_hash)
-                commit=Commit.from_content(commit_object)
-
+                
+                commit=Commit.from_content(commit_object.content)
+                print(commit.tree_hash)
                 if commit.tree_hash:
+                    print("cwm")
                     last_index_files=self.build_index_from_tree(commit.tree_hash)
                     #let us compare and find the new if there is a staged change
                     
             except:    
+                
                 last_index_files={}
        
         # added = index.keys() - last_index_files.keys()
@@ -67,11 +71,12 @@ Clean: everything matches HEAD.
         
         #what files have modified but not staged -> once commited in but in current working directory it is changed but not staged
         unstaged_files=[]
-        print("log1")
+        
         working_dirs_files=self.get_working_directory()
+        
         for file_path in working_dirs_files:
             if file_path in index:
-                if working_dirs_files[file_path] !=working_dirs_files[file_path]:
+                if working_dirs_files[file_path] !=index[file_path]:
                     unstaged_files.add(file_path)
         if unstaged_files:
              print("\nChanges not staged for commit:\n   use \"git add <file>...\" to update what will be committed\n    use \"git restore <file>...\" to discard changes in working directory")
